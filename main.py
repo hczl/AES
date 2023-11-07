@@ -30,31 +30,6 @@ def inverse_subnib(char):
     return hex_to_bin(inverse_S_box[row][col])
 
 
-# ansi_x923填充
-def ansi_x923_pad(text, block_size):
-    text = text.encode('utf-8')
-    pad_size = (block_size - (len(text) % block_size)) % block_size
-    if pad_size != 0:
-        for _ in range(pad_size - 1):
-            text += b'0'
-        text += str(pad_size).encode('utf-8')
-    return text
-
-
-def ansi_x923_unpad(text):
-    if text[-1].isdigit():
-        pad_size = int(text[-1])
-        if 0 < int(text[-1]) < 4:
-            for i in range(pad_size - 1):
-                if int(text[-i - 2]) != 0:
-                    return text
-            return text[:-pad_size]
-        else:
-            return text
-    else:
-        return text
-
-
 # 将16进制字符转换为二进制字符串
 def hex_to_bin(hex_str):
     return bin(int(hex_str, 16))[2:].zfill(4)
@@ -158,6 +133,7 @@ def aes_encrypt(plaintext, key):
         for i in range(2):
             for j in range(2):
                 ciphertext += bin_to_hex(text[j][i])
+
     return ciphertext.encode('utf-8')
 
 
@@ -168,7 +144,7 @@ def aes_decrypt(ciphertext, key):
     s_key = [[[round_key[j * 2][4 * i:4 * i + 4], round_key[j * 2 + 1][4 * i:4 * i + 4]] for i in range(2)] for j in
              range(3)]
     for i in range(0, len(ciphertext), 4):
-        text = ciphertext[i:i + 4].decode('utf-8')
+        text = ciphertext[i:i + 4].decode('UTF-8')
         # 初始矩阵
         S = [[hex_to_bin(str(text[i])), hex_to_bin(str(text[i + 2]))] for i in range(2)]
         # 密钥加
@@ -195,41 +171,71 @@ def aes_decrypt(ciphertext, key):
         for i in range(2):
             for j in range(2):
                 plaintext += bin_to_hex(text[j][i])
+
     return plaintext
 
 
-def main(plaintext, key, mode='ascii'):
+def encryption(plaintext, key, mode='ascii'):
     print(f'密钥： {key}')
     print(f'明文: {plaintext}')
+    out = ''
     if mode == 'ascii':
-        plaintext_c = ansi_x923_pad(plaintext, 2)
+        if len(plaintext) % 2 != 0:
+            out = plaintext[-1:]
+            plaintext = plaintext[:-1]
+        plaintext_c = plaintext.encode('UTF-8')
         data = ''
         for char in plaintext_c:
             data += ascii_to_hex(char)
         data = data.encode('utf-8')
     else:
-        data = ansi_x923_pad(plaintext, 4)
+        while len(plaintext) % 4 != 0:
+            plaintext = '0' + plaintext
+        data = plaintext.encode('UTF-8')
     ciphertext = aes_encrypt(data, key)
-    print(f"加密后: {ciphertext.decode('utf-8')}")
-    deciphertext = aes_decrypt(ciphertext, key)
+    ascii_t = ''
     if mode == 'ascii':
-        detext = ''
-        for i in range(0, len(deciphertext), 2):
-            detext += hex_to_ascii(deciphertext[i:i + 2])
-        if len(plaintext) % 4 == 0:
-            detext += '0'
-            detext = ansi_x923_unpad(detext)
-            detext = detext[:-1]
-        else:
-            detext = ansi_x923_unpad(detext)
-    elif len(plaintext) % 4 == 0:
-        detext = deciphertext
+        for i in range(0, len(ciphertext), 2):
+            ascii_t += hex_to_ascii(ciphertext[i:i + 2])
+        if out:
+            ascii_t += out
     else:
-        detext = ansi_x923_unpad(deciphertext)
-    print(f'解密后: {detext}')
+        ascii_t = ciphertext.decode('UTF-8')
+    return ascii_t
 
 
-# 输入ascii明文进行加解密
-main('A742001', '0010110101010101', 'ascii')
+def decrypt(ciphertext, key, mode='ascii'):
+    out = ''
+    if mode == 'ascii':
+        if len(ciphertext) % 2 != 0:
+            out = ciphertext[-1:]
+            ciphertext = ciphertext[:-1]
+        data = ''
+        for char in ciphertext:
+            data += ascii_to_hex(ord(char))
+        data = data.encode('UTF-8')
+    else:
+        while len(ciphertext) % 4 != 0:
+            ciphertext = '0' + ciphertext
+        data = ciphertext.encode('UTF-8')
+    deciphertext = aes_decrypt(data, key)
+    ascii_t = ''
+    if mode == 'ascii':
+        for i in range(0, len(deciphertext), 2):
+            ascii_t += hex_to_ascii(deciphertext[i:i + 2])
+        if out:
+            ascii_t += out
+    else:
+        while deciphertext[0]=='0':
+            deciphertext=deciphertext[1:]
+        ascii_t =deciphertext
+    return ascii_t
+
+
+# # 输入ascii明文进行加解密
+ciphertext = encryption('a130', '0010110101010101', 'scii')
+print(f"加密后: {ciphertext}")
+deciphertext = decrypt(ciphertext, '0010110101010101', 'scii')
+print(f'解密后: {deciphertext}')
 # 输入16进制明文进行加解密
-main('A742001', '0010110101010101', '16')
+# main('93ac', '1111010101110000', '16')
