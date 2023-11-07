@@ -216,13 +216,20 @@ def main(plaintext, key, mode='ascii'):
         detext = ''
         for i in range(0, len(deciphertext), 2):
             detext += hex_to_ascii(deciphertext[i:i + 2])
-        detext = ansi_x923_unpad(detext)
+        if len(plaintext) % 4 == 0:
+            detext += '0'
+            detext = ansi_x923_unpad(detext)
+            detext = detext[:-1]
+        else:
+            detext = ansi_x923_unpad(detext)
+    elif len(plaintext) % 4 == 0:
+        detext = deciphertext
     else:
         detext = ansi_x923_unpad(deciphertext)
     print(f'解密后: {detext}')
 
 
 # 输入ascii明文进行加解密
-main('A7418C5B', '0010110101010101', 'ascii')
+main('A742001', '0010110101010101', 'ascii')
 # 输入16进制明文进行加解密
-main('A7418C5B', '0010110101010101', '16')
+main('A742001', '0010110101010101', '16')
