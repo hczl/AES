@@ -183,10 +183,9 @@ def encryption(plaintext, key, mode='ascii'):
         if len(plaintext) % 2 != 0:
             out = plaintext[-1:]
             plaintext = plaintext[:-1]
-        plaintext_c = plaintext.encode('UTF-8')
         data = ''
-        for char in plaintext_c:
-            data += ascii_to_hex(char)
+        for char in plaintext:
+            data += ascii_to_hex(ord(char))
         data = data.encode('utf-8')
     else:
         while len(plaintext) % 4 != 0:
@@ -233,9 +232,11 @@ def decrypt(ciphertext, key, mode='ascii'):
 
 
 # # 输入ascii明文进行加解密
-ciphertext = encryption('a130', '0010110101010101', 'scii')
+ciphertext = encryption('éVÍ^]¨\Jÿó', '0010110101010101', 'ascii')
 print(f"加密后: {ciphertext}")
-deciphertext = decrypt(ciphertext, '0010110101010101', 'scii')
+deciphertext = decrypt(ciphertext, '0010110101010101', 'ascii')
+print(f'解密后: {deciphertext}')
+deciphertext = decrypt(deciphertext, '0010110101010101', 'ascii')
 print(f'解密后: {deciphertext}')
 # 输入16进制明文进行加解密
 # main('93ac', '1111010101110000', '16')
